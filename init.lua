@@ -1,5 +1,5 @@
 
-local S = minetest.get_translator("teleport_tool")
+local S = minetest.get_translator("teleporter_tool")
 
 -- The wear added to the teleporter per teleport. When the wear gets past 65535, the
 -- tool breaks.
@@ -44,7 +44,7 @@ local function teleport_node(pos, user, tool)
 				tool:set_metadata(minetest.serialize(meta)) -- Save it
 				minetest.chat_send_player(pname, S("Aquired node at %s for teleport"):format(minetest.pos_to_string(pos)))
 			else
-				minetest.log("action", S("Player '%s' tried to move block %s by means of teleport_tool:teleporter"):format(pname, minetest.pos_to_string(pos)))
+				minetest.log("action", S("Player '%s' tried to move block %s by means of teleporter_tool:teleporter"):format(pname, minetest.pos_to_string(pos)))
 				minetest.chat_send_player(pname, S("Node at %s can't be teleported."):format(minetest.pos_to_string(pos)))
 			end
 			return {action=true, use=false}
@@ -70,7 +70,7 @@ local function teleport_node(pos, user, tool)
 				tool:set_metadata(minetest.serialize(meta)) -- Save it
 				return {action=true, use=true}
 			else
-				minetest.log("action", S("Player '%s' tried to move block %s to %s by means of teleport_tool:teleporter"):format(pname, minetest.pos_to_string(meta.save_block), minetest.pos_to_string(new)))
+				minetest.log("action", S("Player '%s' tried to move block %s to %s by means of teleporter_tool:teleporter"):format(pname, minetest.pos_to_string(meta.save_block), minetest.pos_to_string(new)))
 				minetest.chat_send_player(pname, S("Node at %s can't be teleported to %s."):format(minetest.pos_to_string(meta.save_block), minetest.pos_to_string(new)))
 			end
 		else
@@ -112,9 +112,9 @@ local function interact(tool, user, pointed_thing, reverse)
 	return tool
 end
 
-minetest.register_tool("teleport_tool:teleporter", {
+minetest.register_tool("teleporter_tool:teleporter", {
 	description = S("Teleporter"),
-	inventory_image = "teleport_tool_teleporter.png",
+	inventory_image = "teleporter_tool_teleporter.png",
 	_mcl_toollike_wield = true,
 	node_dig_prediction = "",
 	on_place = function(tool, user, pointed_thing)
@@ -136,7 +136,7 @@ end
 if minetest.registered_items["mesecons_pistons:piston_sticky_off"] then
 	local PISTON = "mesecons_pistons:piston_sticky_off"
 	minetest.register_craft({
-		output = "teleport_tool:teleporter",
+		output = "teleporter_tool:teleporter",
 		recipe = {
 			{PISTON, EXTRA_BLOCK},
 			{PISTON, STICK},
