@@ -1,4 +1,4 @@
-# teleport_tool
+# teleporter_tool
 Like [shifter_tool](https://github.com/TurkeyMcMac/shifter_tool) except teleports the block rather than shifting it.
 
 This mod is for [Minetest](https://www.minetest.net/). It implements a teleport nodes feature.
