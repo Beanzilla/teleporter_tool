@@ -5,14 +5,6 @@ local S = minetest.get_translator("teleporter_tool")
 -- tool breaks.
 local WEAR_PER_USE = 328 -- 200 uses.
 
-local AIR_BLOCKS = {
-	"air",
-	"mcl_core:water_flowing",
-	"mcl_core:water_source",
-	"mcl_core:lava_flowing",
-	"mcl_core:lava_source",
-}
-
 -- Provides a reference to ...
 -- https://stackoverflow.com/questions/2282444/how-to-check-if-a-table-contains-an-element-in-lua
 function table.contains(table, element)
@@ -79,13 +71,6 @@ local function teleport_node(pos, user, pt, tool)
 		old_meta = old_meta:to_table()
 		if old ~= nil then
 			local new = pt.above
-			if not table.contains(AIR_BLOCKS, minetest.get_node_or_nil(new).name) then
-				minetest.log("action", S("Player '%s' tried to move block %s to %s but destination isn't empty"):format(pname, minetest.pos_to_string(meta.save_block), minetest.pos_to_string(new)))
-				minetest.chat_send_player(pname, S("Failed to teleport %s to %s as destination isn't empty"):format(minetest.pos_to_string(meta.save_block), minetest.pos_to_string(new)))
-				meta.save_block = nil -- Reset the teleport
-				tool:set_metadata(minetest.serialize(meta)) -- Save it
-				return {action=false, use=false}
-			end
 			-- Allow teleport only if source and destination are allowed to be interacted by the player. (Except if they have server or protection_bypass privs)
 			if not minetest.is_protected(meta.save_block, pname) and not minetest.is_protected(new, pname) or minetest.check_player_privs(pname, {server = true}) or minetest.check_player_privs(pname, {protection_bypass = true}) then
 				minetest.remove_node(meta.save_block)
