@@ -5,6 +5,25 @@ local S = minetest.get_translator("teleporter_tool")
 -- tool breaks.
 local WEAR_PER_USE = 328 -- 200 uses.
 
+local AIR_BLOCKS = {
+	"air",
+	"mcl_core:water_flowing",
+	"mcl_core:water_source",
+	"mcl_core:lava_flowing",
+	"mcl_core:lava_source",
+}
+
+-- Provides a reference to ...
+-- https://stackoverflow.com/questions/2282444/how-to-check-if-a-table-contains-an-element-in-lua
+function table.contains(table, element)
+  for _, value in pairs(table) do
+    if value == element then
+      return true
+    end
+  end
+  return false
+end
+
 -- Tries to tell whether an ObjectRef represents a real connected player.
 local function object_is_player(object)
 	if not object then return false end
@@ -32,7 +51,7 @@ end
 
 -- Tries to teleport the node. The user will be
 -- messaged if the teleport didn't occur. The return value is whether it did.
-local function teleport_node(pos, user, tool)
+local function teleport_node(pos, user, pt, tool)
 	local meta = pre_check(tool)
 	local pname = user:get_player_name()
 	if meta.save_block == nil then
@@ -50,6 +69,8 @@ local function teleport_node(pos, user, tool)
 			return {action=true, use=false}
 		else
 			minetest.chat_send_player(pname, S("Old location at %s is unloaded, get closer."):format(minetest.pos_to_string(pos)))
+			meta.save_block = nil -- Reset the teleport
+			tool:set_metadata(minetest.serialize(meta)) -- Save it
 			return {action=false, use=false}
 		end
 	else
@@ -57,8 +78,14 @@ local function teleport_node(pos, user, tool)
 		local old_meta = minetest.get_meta(meta.save_block)
 		old_meta = old_meta:to_table()
 		if old ~= nil then
-			local new = pos -- Correct the final destination by adding 1 to the y
-			new.y = new.y + 1 -- WARNING: If the player places it on the bottom of a roof it will replace roof!
+			local new = pt.above
+			if not table.contains(AIR_BLOCKS, minetest.get_node_or_nil(new).name) then
+				minetest.log("action", S("Player '%s' tried to move block %s to %s but destination isn't empty"):format(pname, minetest.pos_to_string(meta.save_block), minetest.pos_to_string(new)))
+				minetest.chat_send_player(pname, S("Failed to teleport %s to %s as destination isn't empty"):format(minetest.pos_to_string(meta.save_block), minetest.pos_to_string(new)))
+				meta.save_block = nil -- Reset the teleport
+				tool:set_metadata(minetest.serialize(meta)) -- Save it
+				return {action=false, use=false}
+			end
 			-- Allow teleport only if source and destination are allowed to be interacted by the player. (Except if they have server or protection_bypass privs)
 			if not minetest.is_protected(meta.save_block, pname) and not minetest.is_protected(new, pname) or minetest.check_player_privs(pname, {server = true}) or minetest.check_player_privs(pname, {protection_bypass = true}) then
 				minetest.remove_node(meta.save_block)
@@ -72,9 +99,13 @@ local function teleport_node(pos, user, tool)
 			else
 				minetest.log("action", S("Player '%s' tried to move block %s to %s by means of teleporter_tool:teleporter"):format(pname, minetest.pos_to_string(meta.save_block), minetest.pos_to_string(new)))
 				minetest.chat_send_player(pname, S("Node at %s can't be teleported to %s."):format(minetest.pos_to_string(meta.save_block), minetest.pos_to_string(new)))
+				meta.save_block = nil -- Reset the teleport
+				tool:set_metadata(minetest.serialize(meta)) -- Save it
 			end
 		else
 			minetest.chat_send_player(pname, S("Old location at %s is unloaded, get closer."):format(minetest.pos_to_string(meta.save_block)))
+			meta.save_block = nil -- Reset the teleport
+			tool:set_metadata(minetest.serialize(meta)) -- Save it
 			return {action=false, use=false}
 		end
 	end
@@ -89,7 +120,7 @@ local function interact(tool, user, pointed_thing, reverse)
 		local name = user and user:get_player_name() or ""
 		local use_pos = pointed_thing.under
 		local meta = pre_check(tool)
-		local op = teleport_node(use_pos, user, tool)
+		local op = teleport_node(use_pos, user, pointed_thing, tool)
 		if op.action then
 			local sound = "teleporter_tool_pull"
 			if meta.save_block ~= nil then
